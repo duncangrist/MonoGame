@@ -540,8 +540,25 @@ namespace Microsoft.Xna.Framework.Graphics
             // and not creating a new one each time.
             //
             var desc = new SharpDX.Direct3D11.Texture2DDescription();
-            desc.Width = width;
-            desc.Height = height;
+            int actualWidth = width;
+            if (rect.HasValue)
+            {
+                // find next power of two higher than the requested width and request that
+                int i = 1;
+                while (i < rect.Value.Width)
+                {
+                    i *= 2;
+                }
+                actualWidth = i;
+
+                desc.Width = actualWidth;
+                desc.Height = rect.Value.Height;
+            }
+            else
+            {
+                desc.Width = width;
+                desc.Height = height;
+            }
             desc.MipLevels = 1;
             desc.ArraySize = 1;
             desc.Format = SharpDXHelper.ToFormat(format);
@@ -559,17 +576,68 @@ namespace Microsoft.Xna.Framework.Graphics
                     // Copy the data from the GPU to the staging texture.
                     if (rect.HasValue)
                     {
-                        // TODO: Need to deal with subregion copies!
-                        throw new NotImplementedException();
+                        // this looks more complicated that you may expect because CopySubresourceRegion can only deal with a destination texture
+                        // which has width with an exact power of 2.
+
+                        var region = new SharpDX.Direct3D11.ResourceRegion();
+
+                        int x, y, w, h;
+                        x = rect.Value.X;
+                        y = rect.Value.Y;
+                        w = actualWidth;
+                        h = rect.Value.Height;
+
+                        region.Top = y;
+                        region.Front = 0;
+                        region.Back = 1;
+                        region.Bottom = y + h;
+
+                        // if the newly requested area is outside of the source texture to the right, move it to the left
+                        int xOffset = 0;
+                        if (x + w > width)
+                        {
+                            xOffset = (x + w) - width;
+                            x -= xOffset;
+                        }
+
+                        // if x is now < 0 we're boned
+                        if (x < 0)
+                        {
+                            Debug.Assert(false, "Requested area is too large to map to a power-of-two width in the source texture.");
+                            return;
+                        }
+
+                        region.Left = x;
+                        region.Right = x + w;
+
+                        // get expanded array into which to copy the data
+                        T[] dataExpanded = new T[w * h];
+
+                        d3dContext.CopySubresourceRegion(_texture, level, region, stagingTex, 0, 0, 0, 0);
+                    
+                        // Copy the data to the array.
+                        SharpDX.DataStream stream;
+                        d3dContext.MapSubresource(stagingTex, 0, SharpDX.Direct3D11.MapMode.Read, SharpDX.Direct3D11.MapFlags.None, out stream);
+                        stream.ReadRange(dataExpanded, startIndex, dataExpanded.Length);
+                        stream.Dispose();
+
+                        // now get the actually requested portion of each line
+                        int requestedWidth = rect.Value.Width;
+                        for (int ix = 0; ix < h; ix++)
+                        {
+                            Array.Copy(dataExpanded, (ix * w) + xOffset, data, ix * requestedWidth, requestedWidth);
+                        }
                     }
                     else
+                    {
                         d3dContext.CopySubresourceRegion(_texture, level, null, stagingTex, 0, 0, 0, 0);
 
-                    // Copy the data to the array.
-                    SharpDX.DataStream stream;
-                    d3dContext.MapSubresource(stagingTex, 0, SharpDX.Direct3D11.MapMode.Read, SharpDX.Direct3D11.MapFlags.None, out stream);
-                    stream.ReadRange(data, startIndex, elementCount);
-                    stream.Dispose();
+                        // Copy the data to the array.
+                        SharpDX.DataStream stream;
+                        d3dContext.MapSubresource(stagingTex, 0, SharpDX.Direct3D11.MapMode.Read, SharpDX.Direct3D11.MapFlags.None, out stream);
+                        stream.ReadRange(data, startIndex, elementCount);
+                        stream.Dispose();
+                    }
                 }
 
 #else
