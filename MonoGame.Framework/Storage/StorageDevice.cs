@@ -356,26 +356,42 @@ namespace Microsoft.Xna.Framework.Storage
 		//     The IAsyncResult returned from BeginOpenContainer.
 		public StorageContainer EndOpenContainer (IAsyncResult result)
 		{
-            StorageContainer returnValue = null;
-            try
-            {
-                // Retrieve the delegate.
+			StorageContainer returnValue = null;
+			try {
+#if WINRT
+                // AsyncResult does not exist in WinRT
                 var asyncResult = result.AsyncState as OpenContainerAsynchronous;
+				if (asyncResult != null)
+				{
+					// Wait for the WaitHandle to become signaled.
+					result.AsyncWaitHandle.WaitOne();
 
-                // Wait for the WaitHandle to become signaled.
-                result.AsyncWaitHandle.WaitOne();
+					// Call EndInvoke to retrieve the results.
+    				returnValue = asyncResult.EndInvoke(result);
+				}
+#else
+				// Retrieve the delegate.
+				AsyncResult asyncResult = result as AsyncResult;
+				if (asyncResult != null)
+				{
+					var asyncDelegate = asyncResult.AsyncDelegate as OpenContainerAsynchronous;
 
-                // Call EndInvoke to retrieve the results.
-                if (asyncResult != null)
-                    returnValue = asyncResult.EndInvoke(result);
+					// Wait for the WaitHandle to become signaled.
+					result.AsyncWaitHandle.WaitOne();
+
+					// Call EndInvoke to retrieve the results.
+					if (asyncDelegate != null)
+						returnValue = asyncDelegate.EndInvoke(result);
+				}
+#endif
             }
             finally
             {
-                // Close the wait handle.
-                result.AsyncWaitHandle.Dispose();
-            }
-
-            return returnValue;
+				// Close the wait handle.
+				result.AsyncWaitHandle.Dispose ();	 
+			}
+			
+			return returnValue;
 
 		}			
 		//
