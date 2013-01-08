@@ -317,7 +317,16 @@ namespace Microsoft.Xna.Framework
 #else
             _graphicsDevice.PresentationParameters.DeviceWindowHandle = _game.Window.Handle;
 #endif
-
+            var handler = PreparingDeviceSettings;
+            if (handler != null)
+            {
+                handler(this, new PreparingDeviceSettingsEventArgs(new GraphicsDeviceInformation
+                    {
+                        Adapter = GraphicsAdapter.DefaultAdapter,
+                        DeviceType = DeviceType.Hardware,
+                        PresentationParameters = _graphicsDevice.PresentationParameters
+                    }));
+            }
             _graphicsDevice.Initialize();
 #else
 
