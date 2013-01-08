@@ -662,7 +662,7 @@ namespace Microsoft.Xna.Framework.Graphics
                 _msaaTargetBufferFormat = format;
 
                 multisampleDesc.Count = ResolveAllowedMultiSampleCount(PresentationParameters.MultiSampleCount);
-                multisampleDesc.Quality = (int)SharpDX.Direct3D11.StandardMultisampleQualityLevels.StandardMultisamplePattern;
+                multisampleDesc.Quality = multisampleDesc.Count > 1 ? (int)SharpDX.Direct3D11.StandardMultisampleQualityLevels.StandardMultisamplePattern : 0;
 
                 var desc = new SharpDX.Direct3D11.Texture2DDescription();
                 desc.Width = PresentationParameters.BackBufferWidth;
