@@ -147,11 +147,11 @@ namespace Microsoft.Xna.Framework.Graphics
         protected SharpDX.Direct3D11.RenderTargetView _renderTargetView;
         protected SharpDX.Direct3D11.DepthStencilView _depthStencilView;
 
+#if !WINDOWS_PHONE
+
         Format _msaaTargetBufferFormat;
         SharpDX.Direct3D11.Texture2D _msaaTargetBuffer;
         SharpDX.Direct3D11.Texture2D _backBuffer;
-
-#if !WINDOWS_PHONE
 
         // Declare Direct2D Objects
         protected SharpDX.Direct2D1.Factory1 _d2dFactory;
