@@ -835,7 +835,7 @@ namespace Microsoft.Xna.Framework.Graphics
             {
                 multiSampleCount = 16;
             }
-            while (_d3dDevice.CheckMultisampleQualityLevels(_msaaTargetBufferFormat, multiSampleCount) <= 0 && multiSampleCount > 1)
+            while (_d3dDevice.CheckMultisampleQualityLevels(format, multiSampleCount) <= 0 && multiSampleCount > 1)
             {
                 multiSampleCount--;
             }
