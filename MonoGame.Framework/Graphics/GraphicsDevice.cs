@@ -653,30 +653,32 @@ namespace Microsoft.Xna.Framework.Graphics
 
             // Use BGRA for the swap chain.
             var format = PresentationParameters.BackBufferFormat == SurfaceFormat.Color ? 
-                            SharpDX.DXGI.Format.B8G8R8A8_UNorm : 
+                            Format.B8G8R8A8_UNorm : 
                             SharpDXHelper.ToFormat(PresentationParameters.BackBufferFormat);
 
-            var multisampleDesc = new SharpDX.DXGI.SampleDescription(1, 0);
+            var multisampleDesc = new SampleDescription(1, 0);
             if ( PresentationParameters.MultiSampleCount > 1 )
             {
-                _msaaTargetBufferFormat = format;
+                multisampleDesc.Count = ResolveAllowedMultiSampleCount(PresentationParameters.MultiSampleCount, format);
+                if (multisampleDesc.Count > 1)
+                {
+                    multisampleDesc.Quality = (int)SharpDX.Direct3D11.StandardMultisampleQualityLevels.StandardMultisamplePattern;
 
-                multisampleDesc.Count = ResolveAllowedMultiSampleCount(PresentationParameters.MultiSampleCount);
-                multisampleDesc.Quality = multisampleDesc.Count > 1 ? (int)SharpDX.Direct3D11.StandardMultisampleQualityLevels.StandardMultisamplePattern : 0;
+                    var desc = new SharpDX.Direct3D11.Texture2DDescription();
+                    desc.Width = PresentationParameters.BackBufferWidth;
+                    desc.Height = PresentationParameters.BackBufferHeight;
+                    desc.MipLevels = 1;
+                    desc.ArraySize = 1;
+                    desc.Format = format;
+                    desc.BindFlags = SharpDX.Direct3D11.BindFlags.RenderTarget;
+                    desc.CpuAccessFlags = SharpDX.Direct3D11.CpuAccessFlags.None;
+                    desc.SampleDescription = multisampleDesc;
+                    desc.Usage = SharpDX.Direct3D11.ResourceUsage.Default;
+                    desc.OptionFlags = SharpDX.Direct3D11.ResourceOptionFlags.None;
 
-                var desc = new SharpDX.Direct3D11.Texture2DDescription();
-                desc.Width = PresentationParameters.BackBufferWidth;
-                desc.Height = PresentationParameters.BackBufferHeight;
-                desc.MipLevels = 1;
-                desc.ArraySize = 1;
-                desc.Format = format;
-                desc.BindFlags = SharpDX.Direct3D11.BindFlags.RenderTarget;
-                desc.CpuAccessFlags = SharpDX.Direct3D11.CpuAccessFlags.None;
-                desc.SampleDescription = multisampleDesc;
-                desc.Usage = SharpDX.Direct3D11.ResourceUsage.Default;
-                desc.OptionFlags = SharpDX.Direct3D11.ResourceOptionFlags.None;
-
-                _msaaTargetBuffer = new SharpDX.Direct3D11.Texture2D(_d3dDevice, desc);
+                    _msaaTargetBufferFormat = format;
+                    _msaaTargetBuffer = new SharpDX.Direct3D11.Texture2D(_d3dDevice, desc);
+                }
             }
 
             // If the swap chain already exists... update it.
@@ -827,7 +829,7 @@ namespace Microsoft.Xna.Framework.Graphics
             _d2dContext.TextAntialiasMode = SharpDX.Direct2D1.TextAntialiasMode.Grayscale;
         }
 
-        int ResolveAllowedMultiSampleCount(int multiSampleCount)
+        int ResolveAllowedMultiSampleCount(int multiSampleCount, Format format)
         {
             if (multiSampleCount > 16)
             {
