@@ -549,7 +549,8 @@ namespace Microsoft.Xna.Framework.Graphics
             if (rect.HasValue)
             {
                 // find next power of two higher than the requested width and request that
-                int i = 1;
+                // min of 32 - wasn't working on matt's box
+                int i = 32;
                 while (i < rect.Value.Width)
                 {
                     i *= 2;
