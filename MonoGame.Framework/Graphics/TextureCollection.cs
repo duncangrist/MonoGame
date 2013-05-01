@@ -113,7 +113,17 @@ namespace Microsoft.Xna.Framework.Graphics
                 if (_textures[i] == null)
                     pixelShaderStage.SetShaderResource(i, null);
                 else
-                    pixelShaderStage.SetShaderResource(i, _textures[i].GetShaderResourceView());
+                {
+                    if (_textures[i].IsDisposed)
+                    {
+                        pixelShaderStage.SetShaderResource(i, null);
+                    }
+                    else
+                    {
+                        pixelShaderStage.SetShaderResource(i, _textures[i].GetShaderResourceView());    
+                    }                    
+                }
+                    
 #endif
 
                 _dirty &= ~mask;

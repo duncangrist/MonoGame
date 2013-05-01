@@ -888,7 +888,7 @@ namespace Microsoft.Xna.Framework.Graphics
 
                 // Write the png.
                 var encoder = await BitmapEncoder.CreateAsync(encoderId, memstream);
-                encoder.SetPixelData(BitmapPixelFormat.Rgba8, BitmapAlphaMode.Ignore, (uint)width, (uint)height, 96, 96, pixelData);
+                encoder.SetPixelData(BitmapPixelFormat.Rgba8, BitmapAlphaMode.Premultiplied, (uint)width, (uint)height, 96, 96, pixelData);
                 await encoder.FlushAsync();
 
                 // Copy the memory stream into the real output stream.
