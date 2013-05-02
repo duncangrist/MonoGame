@@ -644,18 +644,40 @@ namespace Microsoft.Xna.Framework.Graphics
                     {
                         d3dContext.CopySubresourceRegion(_texture, level, null, stagingTex, 0, 0, 0, 0);
 
-                        T[] dataExpanded = new T[actualWidth * height];
-
-                        // Copy the data to the array.
-                        SharpDX.DataStream stream;
-                        d3dContext.MapSubresource(stagingTex, 0, SharpDX.Direct3D11.MapMode.Read, SharpDX.Direct3D11.MapFlags.None, out stream);
-                        stream.ReadRange(dataExpanded, startIndex, elementCount);
-                        stream.Dispose();
-
-                        int requestedWidth = width;
-                        for (int ix = 0; ix < height; ix++)
+                        
+                        if (typeof(T) != typeof(byte))
                         {
-                            Array.Copy(dataExpanded, (ix * actualWidth), data, ix * requestedWidth, requestedWidth);
+                            T[] dataExpanded = new T[actualWidth * height];
+
+                            // Copy the data to the array.
+                            SharpDX.DataStream stream;
+                            d3dContext.MapSubresource(stagingTex, 0, SharpDX.Direct3D11.MapMode.Read,
+                                                      SharpDX.Direct3D11.MapFlags.None, out stream);
+                            stream.ReadRange(dataExpanded, startIndex, dataExpanded.Length);
+                            stream.Dispose();
+
+                            int requestedWidth = width;
+                            for (int ix = 0; ix < height; ix++)
+                            {
+                                Array.Copy(dataExpanded, (ix * actualWidth), data, ix * requestedWidth, requestedWidth);
+                            }
+                        }
+                        else
+                        {
+                            T[] dataExpanded = new T[actualWidth * height * 4];
+
+                            // Copy the data to the array.
+                            SharpDX.DataStream stream;
+                            d3dContext.MapSubresource(stagingTex, 0, SharpDX.Direct3D11.MapMode.Read,
+                                                      SharpDX.Direct3D11.MapFlags.None, out stream);
+                            stream.ReadRange(dataExpanded, startIndex, dataExpanded.Length);
+                            stream.Dispose();
+
+                            int requestedWidth = width;
+                            for (int ix = 0; ix < height; ix++)
+                            {
+                                Array.Copy(dataExpanded, (ix * actualWidth * 4), data, ix * requestedWidth * 4, requestedWidth * 4);
+                            }                            
                         }
                     }
                 }
