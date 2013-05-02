@@ -562,7 +562,13 @@ namespace Microsoft.Xna.Framework.Graphics
             }
             else
             {
-                desc.Width = width;
+                int i = 32;
+                while (i < width)
+                {
+                    i *= 2;
+                }
+                actualWidth = i;
+                desc.Width = actualWidth;
                 desc.Height = height;
             }
             desc.MipLevels = 1;
@@ -638,11 +644,19 @@ namespace Microsoft.Xna.Framework.Graphics
                     {
                         d3dContext.CopySubresourceRegion(_texture, level, null, stagingTex, 0, 0, 0, 0);
 
+                        T[] dataExpanded = new T[actualWidth * height];
+
                         // Copy the data to the array.
                         SharpDX.DataStream stream;
                         d3dContext.MapSubresource(stagingTex, 0, SharpDX.Direct3D11.MapMode.Read, SharpDX.Direct3D11.MapFlags.None, out stream);
-                        stream.ReadRange(data, startIndex, elementCount);
+                        stream.ReadRange(dataExpanded, startIndex, elementCount);
                         stream.Dispose();
+
+                        int requestedWidth = width;
+                        for (int ix = 0; ix < height; ix++)
+                        {
+                            Array.Copy(dataExpanded, (ix * actualWidth), data, ix * requestedWidth, requestedWidth);
+                        }
                     }
                 }
 
