@@ -452,23 +452,15 @@ namespace Microsoft.Xna.Framework.Audio
 #endif
             }
 		}
-		
+#if WINRT
+	    float _pitch;
+#endif
 		public float Pitch         
 		{             
 	            get
 	            {                    
 #if WINRT
-                    if (_voice == null)
-                        return 0.0f;
-
-                    // NOTE: This is copy of what XAudio2.FrequencyRatioToSemitones() does
-                    // which avoids the native call and is actually more accurate.
-                    var pitch = 39.86313713864835 * Math.Log10(_voice.FrequencyRatio);
-
-                    // Convert from semitones to octaves.
-                    pitch /= 12.0;
-
-                    return (float)pitch;
+	                return _pitch;
 #else
 					if ( _sound != null)
 				    {
@@ -480,6 +472,8 @@ namespace Microsoft.Xna.Framework.Audio
 	            set
 	            {
 #if WINRT
+	                _pitch = value;
+
                     if (_voice == null)
                         return;
 
