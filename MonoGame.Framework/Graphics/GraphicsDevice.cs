@@ -254,7 +254,7 @@ namespace Microsoft.Xna.Framework.Graphics
                     return;
 
                 _dpi = value;
-                _d2dContext.DotsPerInch = new DrawingSizeF(_dpi, _dpi);
+                _d2dContext.DotsPerInch = new Size2F(_dpi, _dpi);
 
                 //if (OnDpiChanged != null)
                     //OnDpiChanged(this);
@@ -657,12 +657,20 @@ namespace Microsoft.Xna.Framework.Graphics
                             SharpDXHelper.ToFormat(PresentationParameters.BackBufferFormat);
 
             var multisampleDesc = new SampleDescription(1, 0);
-            if ( PresentationParameters.MultiSampleCount > 1 )
+            if ( PresentationParameters.MultiSampleCount > 1)
             {
-                multisampleDesc.Count = ResolveAllowedMultiSampleCount(PresentationParameters.MultiSampleCount, format);
+                int quality;
+                multisampleDesc.Count = ResolveAllowedMultiSampleCount(PresentationParameters.MultiSampleCount, format, out quality);
                 if (multisampleDesc.Count > 1)
                 {
-                    multisampleDesc.Quality = (int)SharpDX.Direct3D11.StandardMultisampleQualityLevels.StandardMultisamplePattern;
+                    if (_featureLevel < FeatureLevel.Level_10_1)
+                    {
+                        multisampleDesc.Quality = quality - 1;
+                    }
+                    else
+                    {
+                        multisampleDesc.Quality = (int)SharpDX.Direct3D11.StandardMultisampleQualityLevels.StandardMultisamplePattern;                        
+                    }
 
                     var desc = new SharpDX.Direct3D11.Texture2DDescription();
                     desc.Width = PresentationParameters.BackBufferWidth;
@@ -829,15 +837,17 @@ namespace Microsoft.Xna.Framework.Graphics
             _d2dContext.TextAntialiasMode = SharpDX.Direct2D1.TextAntialiasMode.Grayscale;
         }
 
-        int ResolveAllowedMultiSampleCount(int multiSampleCount, Format format)
+        int ResolveAllowedMultiSampleCount(int multiSampleCount, Format format, out int qualityLevel)
         {
             if (multiSampleCount > 16)
             {
                 multiSampleCount = 16;
             }
-            while (_d3dDevice.CheckMultisampleQualityLevels(format, multiSampleCount) <= 0 && multiSampleCount > 1)
+            qualityLevel = _d3dDevice.CheckMultisampleQualityLevels(format, multiSampleCount);
+            while (qualityLevel <= 0 && multiSampleCount > 1)
             {
                 multiSampleCount--;
+                qualityLevel = _d3dDevice.CheckMultisampleQualityLevels(format, multiSampleCount);
             }
             return multiSampleCount;
         }
@@ -1290,7 +1300,7 @@ namespace Microsoft.Xna.Framework.Graphics
 #if DIRECTX
                 var viewport = new SharpDX.ViewportF(_viewport.X, _viewport.Y, (float)_viewport.Width, (float)_viewport.Height, _viewport.MinDepth, _viewport.MaxDepth);
                 lock (_d3dContext) 
-                    _d3dContext.Rasterizer.SetViewports(viewport);
+                    _d3dContext.Rasterizer.SetViewports(new[] { viewport });
 #elif OPENGL
                 if (IsRenderTargetBound)
                     GL.Viewport(value.X, value.Y, value.Width, value.Height);
@@ -1514,7 +1524,7 @@ namespace Microsoft.Xna.Framework.Graphics
                     var viewport = new SharpDX.ViewportF( _viewport.X, _viewport.Y, 
                                                           _viewport.Width, _viewport.Height, 
                                                           _viewport.MinDepth, _viewport.MaxDepth);
-                    _d3dContext.Rasterizer.SetViewports(viewport);
+                    _d3dContext.Rasterizer.SetViewports(new [] { viewport });
                     _d3dContext.OutputMerger.SetTargets(_currentDepthStencilView, _currentRenderTargets);
                 }
             }

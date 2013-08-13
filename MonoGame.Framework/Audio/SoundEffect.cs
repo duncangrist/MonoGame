@@ -309,7 +309,7 @@ namespace Microsoft.Xna.Framework.Audio
 #if WINRT
 		    SourceVoice voice = null;
             if (Device != null)
-                voice = new SourceVoice(Device, _format, VoiceFlags.None, XAudio2.MaximumFrequencyRatio);
+                voice = new SourceVoice(Device, _format, VoiceFlags.None, XAudio2.MaximumFrequencyRatio, false);
 
             var instance = new SoundEffectInstance(this, voice);
 #else
@@ -438,7 +438,6 @@ namespace Microsoft.Xna.Framework.Audio
         {
             // This cannot fail.
             Device = new XAudio2();
-
             try
             {
                 Device.StartEngine();
